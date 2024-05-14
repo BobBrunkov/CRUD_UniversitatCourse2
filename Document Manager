@@ -1,0 +1,246 @@
+#include <iostream>
+#include <filesystem>
+#include <fstream>
+#include <chrono>
+
+using namespace std;
+using namespace std::filesystem;
+using namespace std::chrono;
+
+const string ADD = "add";
+const string SHOW = "show";
+const string REMOVE = "remove";
+const string RETRIEVE = "retrieve";
+const string EXIT = "exit";
+
+const vector<string> COMMANDS{ ADD, SHOW, REMOVE, RETRIEVE, EXIT };
+
+string stringInput(string text)
+{
+	while (true)
+	{
+		cout << text;
+		string value;
+		cin >> value;
+
+		if (value.length() > 0)
+		{
+			return value;
+		}
+	}
+}
+
+bool isExists(path filePath)
+{
+	if (exists(filePath)) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+class Document
+{
+public:
+	string num;
+	string name;
+	string content;
+
+	bool save(path inputFilePath)
+	{
+		ifstream inputFile(inputFilePath);
+
+		if (!inputFile.is_open()) {
+			cout << "Error opening file " << inputFilePath.filename() << endl;
+			return false;
+		}
+
+		string line;
+
+		while (getline(inputFile, line)) {
+			content += line + "\n";
+		}
+
+		inputFile.close();
+
+		return true;
+	}
+
+	bool retrieve()
+	{
+		path outputFilePath = current_path() / "retrieve" / name;
+		outputFilePath.replace_extension(".txt");
+
+		ofstream outputFile(outputFilePath);
+		if (!outputFile.is_open()) {
+			cout << "Error opening file " << outputFilePath.filename() << endl;
+			return false;
+		}
+
+		outputFile << content;
+
+		outputFile.close();
+
+		return true;
+	}
+};
+
+class DocsStore {
+private:
+	vector<Document> store;
+
+	int getIndexByNum(string docNum)
+	{
+		for (int i = 0; i < store.size(); ++i)
+		{
+			if (store[i].num == docNum) {
+				return i;
+			}
+		}
+
+		return -1;
+	}
+
+public:
+	void add()
+	{
+		Document newDoc;
+
+		auto currentTime = system_clock::now();
+		auto millisecondsSinceEpoch = duration_cast<milliseconds>(currentTime.time_since_epoch()).count();
+		int newNum = millisecondsSinceEpoch;
+
+		newDoc.num = to_string(newNum);
+		cout << "Document number: " << newDoc.num << endl;
+		newDoc.name = stringInput("Enter document name: ");
+		string fileName = stringInput("Enter file name: ");
+
+		if (!isExists(fileName)) {
+			cout << "I can't add file '" << fileName << "'. Your file is not exist!" << endl;
+			return;
+		}
+
+		if (newDoc.save(fileName)) {
+			store.push_back(newDoc);
+			cout << "Document uploaded successfully" << endl;
+		}
+	}
+
+	void show()
+	{
+		cout << "List of documents" << endl;
+
+		for (Document doc : store) {
+			cout << doc.num << "\t" << doc.name << endl;
+		}
+
+		cout << endl;
+	}
+
+	void remove()
+	{
+		string docNum = stringInput("Enter document number: ");
+
+		int index = getIndexByNum(docNum);
+
+		if (index < 0) {
+			cout << "I can't remove document with number " << docNum << ". The document not found!" << endl;
+			return;
+		}
+
+		store.erase(store.begin() + index);
+
+		cout << "Document removed successfully" << endl;
+	}
+
+	void retrieve()
+	{
+		string docNum = stringInput("Enter document number: ");
+
+		int index = getIndexByNum(docNum);
+
+		if (index < 0) {
+			cout << "I can't retrieve document with number " << docNum << ". The document not found!" << endl;
+			return;
+		}
+
+		if (store[index].retrieve()) {
+			cout << "Document retrieved successfully" << endl;
+		}
+	}
+};
+
+void showCommands()
+{
+	cout << endl;
+	cout << "Commands:" << endl;
+	for (int i = 0; i < COMMANDS.size(); i++)
+	{
+		cout << COMMANDS[i] << endl;
+	}
+}
+
+string commandInput()
+{
+	while (true)
+	{
+		cout << "command: ";
+		string value;
+		cin >> value;
+
+		auto it = find(COMMANDS.begin(), COMMANDS.end(), value);
+
+		if (it != COMMANDS.end()) {
+			return value;
+		}
+	}
+}
+
+void exit()
+{
+	cout << endl;
+	cout << "************************************************" << endl;
+	cout << "Thank you for use Documents store application!!!" << endl;
+	cout << "************************************************" << endl;
+}
+
+bool runCommand(string command, DocsStore& store)
+{
+	if (command == ADD) store.add();
+	if (command == SHOW) store.show();
+	if (command == REMOVE) store.remove();
+	if (command == RETRIEVE) store.retrieve();
+
+	if (command == EXIT) {
+		exit();
+		return false;
+	}
+
+	return true;
+}
+
+int main()
+{
+	cout << endl;
+	cout << "***************************" << endl;
+	cout << "Documents store application" << endl;
+	cout << "***************************" << endl;
+
+	bool result = true;
+	DocsStore store;
+
+	do
+	{
+		showCommands();
+		cout << endl;
+		string command = commandInput();
+
+		string fileName = "";
+
+		result = runCommand(command, store);
+
+	} while (result);
+
+	return 0;
+}
