@@ -1,0 +1,269 @@
+#include <iostream>
+#include <filesystem>
+#include <fstream>
+#include <string>
+#include <cstdlib>
+#include <stdlib.h>
+#include <conio.h>
+using namespace std;
+using namespace std::filesystem;
+//Document Manager
+
+path filestorage = "storage";
+//path workspace = "workspace";
+
+//const string CREATE = "create";
+//const string DELETE = "delete";
+//const string READ = "read";
+//const string SHOW = "show";
+//const string UPDATE = "update";
+//const string EXIT = "exit";
+
+//const vector<string> COMMANDS{ CREATE, DELETE, READ, SHOW, UPDATE, EXIT };
+
+void continuator()
+{
+	cout << endl << "Press Enter to continue...";
+	cin.clear();
+	cin.ignore();
+	cin.get();
+	system("cls");
+}
+
+void prepareStorages()
+{
+	if (!exists(filestorage))
+	{
+		create_directory(filestorage);
+	}
+
+	//if (!exists(workspace))
+	//{
+	//	create_directory(workspace);
+	//}
+}
+
+void greeting()
+{
+	cout << "Welcome to Document Manager" << endl;
+}
+
+void showListOfCommands()
+{
+	cout << "Commands:" << endl;
+	cout << "1) CREATE: creates file in storage" << endl;
+	cout << "2) DELETE: deletes file in storage" << endl;
+	cout << "3) READ: shows content of a file" << endl;
+	cout << "4) SHOW: shows lsit of files" << endl;
+	cout << "5) UPDATE: allows to modify file" << endl;
+	cout << "6) EXIT: ends programm" << endl;
+}
+
+//bool existFileWorkspace(string filename)
+//{
+//	path filePath = workspace / filename;
+//	return exists(filePath);
+//}
+
+bool existFileStorage(string filename)
+{
+	path filePath = filestorage / filename;
+	return exists(filePath);
+}
+
+void showFunc()
+{
+	cout << endl << "LIST: " << endl;
+	for (const auto& entry : directory_iterator(filestorage))
+	{
+		cout << entry.path().filename() << endl;
+	}
+}
+
+///For Commands:
+void createFunc()
+{
+	continuator();
+	cout << "CREATE FILE" << endl;
+	cout << "Enter filename: ";
+	string filename;
+	while (true)
+	{
+		cin >> filename;
+		if (existFileStorage(filename))
+		{
+			cout << endl << "File already exists! Give another name" << endl;
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	path filePath = filestorage / filename;
+	ofstream file(filePath);
+}
+
+void deleteFunc()
+{
+	continuator();
+	cout << "DELETE FILE" << endl;
+	showFunc();
+	cout << "Enter filename: ";
+	string filename;
+	cin >> filename;
+
+	if (!existFileStorage(filename))
+	{
+		cout << endl << "File does not exist" << endl;
+		return;
+	}
+
+	path filePath = filestorage / filename;
+	remove(filePath);
+}
+
+void readFunc()
+{
+	continuator();
+	cout << "READ FILE" << endl;
+	showFunc();
+	cout << "Enter filename: ";
+	string filename, line;
+	cin >> filename;
+
+	if (!existFileStorage(filename))
+	{
+		cout << endl << "File does not exist" << endl;
+		return;
+	}
+
+	path filePath = filestorage / filename;
+	ifstream file(filePath);
+	cout << endl << "{" << filename << "}" << " CONTENT: " << endl << "{" << endl;
+	while (getline(file, line))
+	{
+		cout << line << endl;
+	}
+	cout << "}";
+}
+
+void updateFunc()
+{
+	continuator();
+	cout << "UPDATE FILE" << endl;
+	showFunc();
+	cout << "Enter filename: ";
+	string filename, line;
+	cin >> filename;
+
+	if (!existFileStorage(filename))
+	{
+		cout << endl << "File does not exist" << endl;
+		return;
+	}
+
+	path filePath = filestorage / filename;
+	ifstream infile(filePath);
+	cout << endl << "{" << filename << "}" << " CONTENT: " << endl << "{" << endl;
+	while (getline(infile, line))
+	{
+		cout << line << endl;
+	}
+	cout << "}";
+	infile.close();
+
+	cout << endl << "Enter updated content. Type 'exit' to finish:" << endl;
+	ofstream outfile(filePath);
+	cin.ignore();
+	string updatedContent;
+
+	while (getline(cin, line))
+	{
+		if (line == "exit")
+		{
+			break;
+		}
+
+		updatedContent += line + '\n';
+	}
+
+	outfile << updatedContent;
+	outfile.close();
+	cout << "File updated" << endl;
+	return;
+}
+
+void takeUserCommand(int& userCommand)
+{
+	int count = 0;
+	while (true)
+	{
+		cout << "Command: ";
+		cin >> count;
+		if (cin.fail() || count < 1 || count > 6)
+		{
+			cin.clear();
+			cin.ignore();
+			cout << "Invalid input. Enter an integer 1-6..." << endl;
+		}
+		else
+		{
+			cin.ignore();
+			break;
+		}
+	}
+	userCommand = count;
+}
+
+void useUserCommand(int userCommand)
+{
+	if (userCommand == 1)
+	{
+		createFunc();
+	}
+	else if (userCommand == 2)
+	{
+		deleteFunc();
+	}
+	else if (userCommand == 3)
+	{
+		readFunc();
+	}
+	else if (userCommand == 4)
+	{
+		showFunc();
+	}
+	else if (userCommand == 5)
+	{
+		updateFunc();
+	}
+}
+
+int main()
+{
+	prepareStorages();
+	greeting();
+	int userCommand;
+
+	do {
+
+		userCommand = 0;
+
+		continuator();
+
+		showListOfCommands();
+
+		takeUserCommand(userCommand);
+
+		if (userCommand == 6)
+		{
+			break;
+		}
+
+		useUserCommand(userCommand);
+
+	} while (true);
+
+	return 0;
+}
